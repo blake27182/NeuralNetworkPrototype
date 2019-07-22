@@ -40,10 +40,8 @@ testWork.SetData("Spread.csv")
 testWork.SetRandomWeights()
 testWork.Train(1000)
 
-tS = (0, 1)
-testWork.Run(tS)
+testWork.Run((0, 1))
 testWork.PrintNet()
-tS = (1, 0)
-testWork.Run(tS)
+testWork.Run((1, 0))
 testWork.PrintNet()
 
