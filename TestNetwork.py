@@ -33,9 +33,6 @@ testWork = Network((2, 2, 2))
 # testWork.layers[1][3].weights[2] = 100
 # testWork.layers[1][3].weights[3] = 100
 
-# testSource = (0, 1)
-# testWork.Run(testSource)
-
 testWork.SetData("Spread.csv")
 testWork.SetRandomWeights()
 testWork.Train(1000)

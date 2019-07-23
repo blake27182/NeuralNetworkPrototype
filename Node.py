@@ -4,10 +4,10 @@ class Node(object):
     def __init__(self, n_size):
         super(Node, self).__init__()
         self.nextLayerSize = n_size
-        self.weights = []
-        self.wSemis = []          # list of lists of semi-final nudges
         self.activation = 0
-        self.aSemis = []
+        self.weights = []
+        self.aSemis = []        #
+        self.wSemis = []        # list of lists of semi-final nudges
         self.desAct = 0
 
         for _ in range(self.nextLayerSize):

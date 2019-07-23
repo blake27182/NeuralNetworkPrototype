@@ -6,14 +6,14 @@ import pandas as pd
 import random
 
 
-class Network(object):
-    """docstring for Network"""
+class Network:
+    """The network object class"""
     def __init__(self, lDims):
         super(Network, self).__init__()
         self.layers = []            # list of list of Nodes
         self.layerDims = lDims      # tuple
         self.fileName = ""
-        self.data = {}
+        self.data = {}              # label: list of lists
         self.outputNames = []
 
         for i, x in enumerate(self.layerDims):
@@ -26,16 +26,35 @@ class Network(object):
 
     @staticmethod
     def Sig(x):
+        """Standard Sigmoid function
+
+        Args:
+            x (float): Any number positive or negative
+
+        Returns:
+            (float): A number between 0 and 1
+        """
         return 1 / (1 + exp(-x))
 
     @staticmethod
     def TruncIt(x):
+        """Truncates decimals to 4 place values
+
+        Args:
+            x (float): Any number to be truncated
+
+        Returns:
+            (float): The same number given, truncated to 4 places
+        """
         x *= 10000
         x = trunc(x)
         x /= 10000
         return x
 
     def PrintNet(self):
+        """Prints the current node activations and labels to the screen
+
+        """
         print()
         for l in self.layers:
             actString = ""
@@ -56,6 +75,13 @@ class Network(object):
         print()
 
     def Run(self, source):
+        """Calculates and stores node activations for the given input
+
+        Args:
+            source (:obj:`tuple` of float): The input to be used to run the
+                network. This tuple should be the same length as the first
+                layer of nodes.
+        """
         for i, n in enumerate(self.layers[0]):
             n.activation = source[i]
 
@@ -78,38 +104,57 @@ class Network(object):
                 else:
                     n.activation = self.TruncIt(n.activation)
 
-    def FileReader(self, name):
+    def FileChecker(self, name):
+        """Checks to ensure the file passed is the correct format.
+        """
         if name[-4:] == ".csv":
             self.fileName = name
         else:
             raise Exception("Must provide a .csv file")
 
     def SetData(self, filename):
+        """Reads the given csv file and loads the cell values into the
+            self.data member to be used for training.
+
+        Args:
+            filename (str): The csv file containing the source/target data
+        """
         if type(filename) is dict:
             self.data = filename
         else:
-            self.FileReader(filename)
+            self.FileChecker(filename)
             dF = pd.read_csv(self.fileName)
             columns = list(dF)
-            for dirtyName in columns:
+            for dirtyName in columns:       # sets up the self.data structure
                 if dirtyName[dirtyName.find(' ')+1:] == '1':
                     cleanName = dirtyName[0:dirtyName.find(' ')]
                     self.data[cleanName] = [[] for _ in range(self.layerDims[0])]
 
-            for key in self.data.keys():
+            for key in self.data.keys():    # loads the cell values into self.data
                 for i in range(self.layerDims[0]):
                     data = dF[f"{key} {i+1}"]
                     self.data[key][i] = list(data)
 
     def CalcNudge(self, activation, weight, desAct):
+        """Calculates the appropriate nudge to the node-weight-node relationship
+            where the first node and the weight are costing the network accuracy
+
+        Args:
+            activation (float): The current activation of the first node
+            weight (float): The current weight
+            desAct (float): The desired activation of the second node
+
+        Returns:
+            (:obj:`tuple` of float): The resulting nudge in (act, weight) form
+        """
         x = weight
         y = activation
         if desAct > self.Sig(x * y):
-            wNudge = (exp(-x * y) * y)/10 / (1 + exp(-x * y)) ** 2
-            aNudge = (exp(-x * y) * x)/50 / (1 + exp(-x * y)) ** 2
+            wNudge = (exp(-x * y) * y)/30 / (1 + exp(-x * y)) ** 2
+            aNudge = (exp(-x * y) * x)/100 / (1 + exp(-x * y)) ** 2
         elif desAct < self.Sig(x * y):
-            wNudge = -(exp(-x * y) * y)/10 / (1 + exp(-x * y)) ** 2
-            aNudge = -(exp(-x * y) * x)/50 / (1 + exp(-x * y)) ** 2
+            wNudge = -(exp(-x * y) * y)/30 / ((1 + exp(-x * y)) ** 2)
+            aNudge = -(exp(-x * y) * x)/100 / ((1 + exp(-x * y)) ** 2)
         else:
             wNudge = 0
             aNudge = 0
@@ -117,12 +162,26 @@ class Network(object):
         return aNudge, wNudge
 
     def SetRandomWeights(self):
+        """Just what it sounds like.
+
+        Typically used right before training, this will randomly assign
+            weights between -.1 and .1 to the entire network. Note this will
+            overwrite any previous training.
+        """
         for l in self.layers:
             for n in l:
                 for w in range(len(n.weights)):
-                    n.weights[w] = random.randint(1,100) / 500
+                    n.weights[w] = (random.random()-.5) / 5
 
     def BackProp(self):
+        """Backward Propagation on the current network.
+
+        This is a helper function for Train().
+        The Preconditions are: The network must have non-zero weights
+        and non-zero activations. All activations must correspond to
+        the previous weights and activations. Put simply; you must run
+        the network before using this function.
+        """
         for i in range(len(self.layers)-2, -1, -1):
             for n in self.layers[i]:
 
@@ -143,14 +202,23 @@ class Network(object):
                     n.desAct = 0
 
     def SetNudges(self):
+        """Sets the new weights based on the average nudge
+
+        This is a helper function for Train. Preconditions are: weight nudges
+            must have at least one value in each list, but preferably as
+            many as there are possible outputs.
+        """
         for i, l in enumerate(self.layers):
-            if i+1 == len(self.layers):
-                break
             for n in l:
                 for j in range(len(n.weights)):
                     n.weights[j] += mean(n.wSemis[j])
 
     def ClearSemiInfo(self):
+        """Clears the semi-final data from the network
+
+        This is a helper function for Train(). Typically used right after a
+            full back-propagation to reset for the next cycle.
+        """
         for l in self.layers:
             for n in l:
                 n.ClearNudges()
@@ -174,11 +242,6 @@ class Network(object):
                     # back propagate (set semi-final nudges)
                     self.BackProp()
                 # set the new weights based on the averaged nudges
-                for l in self.layers:
-                    for n in l:
-                        for m, weight in enumerate(n.weights):
-                            weight += mean(n.wSemis[m])
-                            n.weights[m] = weight
+                self.SetNudges()
                 # clear the semi-final info from net and nodes
                 self.ClearSemiInfo()
-            continue
