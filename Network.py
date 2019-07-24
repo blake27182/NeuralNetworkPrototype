@@ -7,7 +7,7 @@ import random
 
 
 class Network:
-    """The network object class"""
+    """The Network object class"""
     def __init__(self, lDims):
         super(Network, self).__init__()
         self.layers = []            # list of list of Nodes

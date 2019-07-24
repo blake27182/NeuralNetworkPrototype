@@ -1,5 +1,5 @@
 class Node(object):
-    """docstring for Node"""
+    """Node is an element of Network"""
 
     def __init__(self, n_size):
         super(Node, self).__init__()
