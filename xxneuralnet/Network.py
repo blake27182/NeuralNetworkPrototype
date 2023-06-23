@@ -9,11 +9,20 @@ import random
 class Network:
     """The Network object class"""
     def __init__(self, lDims):
+        """
+
+        Args:
+            lDims (tuple): Dimensions of the Network. Each integer represents
+            the number of nodes in that layer.
+
+        Returns:
+            (Network): A Network object which can be trained and implemented
+        """
         super(Network, self).__init__()
         self.layers = []            # list of list of Nodes
         self.layerDims = lDims      # tuple
         self.fileName = ""
-        self.data = {}              # label: list of lists
+        self.data = {}              # {label: list of lists}
         self.outputNames = []
 
         for i, x in enumerate(self.layerDims):
@@ -114,7 +123,7 @@ class Network:
 
     def SetData(self, filename):
         """Reads the given csv file and loads the cell values into the
-            self.data member to be used for training.
+            `self.data` member to be used for training.
 
         Args:
             filename (str): The csv file containing the source/target data
